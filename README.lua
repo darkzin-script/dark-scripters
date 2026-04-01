@@ -49,9 +49,9 @@ Button.MouseButton1Click:Connect(function()
 end)
 
 repeat task.wait() until unlocked
--- ENX.AMZ MOBILE GUI
--- ESP + AIM HEAD + FOV SLIDER
--- DRAG FIX + MINIMIZE BUTTON
+-- @enx.amz MOBILE GUI
+-- ESP + DISTÂNCIA + AIM HEAD + FOV SLIDER
+-- DRAG FIX + LOCK + MINIMIZE
 
 -- SERVICES
 local Players = game:GetService("Players")
@@ -82,18 +82,31 @@ FOV.Radius = FOV_RADIUS
 local ESP = {}
 
 local function Alive(plr)
-    return plr.Character and plr.Character:FindFirstChild("Humanoid")
+    return plr.Character
+        and plr.Character:FindFirstChild("Humanoid")
         and plr.Character.Humanoid.Health > 0
 end
 
 local function CreateESP(plr)
     if plr == LocalPlayer then return end
+
     local box = Drawing.new("Square")
     box.Color = Color3.fromRGB(255,0,0)
     box.Thickness = 2
     box.Filled = false
     box.Visible = false
-    ESP[plr] = box
+
+    local text = Drawing.new("Text")
+    text.Color = Color3.fromRGB(255,255,255)
+    text.Size = 14
+    text.Center = true
+    text.Outline = true
+    text.Visible = false
+
+    ESP[plr] = {
+        Box = box,
+        Text = text
+    }
 end
 
 for _,p in pairs(Players:GetPlayers()) do CreateESP(p) end
@@ -113,7 +126,7 @@ Main.Active = true
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1,0,0,35)
 Title.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Title.Text = "@enx.amz"
+Title.Text = "darkk.zz"
 Title.TextScaled = true
 Title.BorderSizePixel = 0
 Title.Active = true
@@ -146,7 +159,7 @@ local aimBtn  = Button("AIM OFF", 85)
 local lockBtn = Button("GUI: LIVRE", 125)
 local minBtn  = Button("MINIMIZAR", 165)
 
--- SLIDER
+-- SLIDER FOV
 local SliderBG = Instance.new("Frame", Main)
 SliderBG.Size = UDim2.new(1,-20,0,10)
 SliderBG.Position = UDim2.new(0,10,0,215)
@@ -166,17 +179,16 @@ SliderBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
 SliderBtn.BorderSizePixel = 0
 SliderBtn.Active = true
 
--- MINI BUTTON (CIRCULAR)
+-- MINI BUTTON
 local MiniBtn = Instance.new("TextButton", gui)
 MiniBtn.Size = UDim2.new(0,48,0,48)
 MiniBtn.Position = UDim2.new(0,20,0,120)
-MiniBtn.Text = "@"
+MiniBtn.Text = "zz"
 MiniBtn.TextScaled = true
 MiniBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
 MiniBtn.Visible = false
 MiniBtn.Active = true
 MiniBtn.BorderSizePixel = 0
-Instance.new("UICorner", MiniBtn).CornerRadius = UDim.new(1,0)
 
 task.spawn(function()
     local h = 0
@@ -307,22 +319,45 @@ end
 RunService.RenderStepped:Connect(function()
     FOV.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
 
-    for p,b in pairs(ESP) do
-        if ESP_ON and Alive(p) then
-            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+    -- ESP + DISTÂNCIA
+    for plr,esp in pairs(ESP) do
+        local box = esp.Box
+        local text = esp.Text
+
+        if ESP_ON and Alive(plr)
+        and LocalPlayer.Character
+        and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            local myHrp = LocalPlayer.Character.HumanoidRootPart
+
             if hrp then
                 local pos,on = Camera:WorldToViewportPoint(hrp.Position)
-                b.Visible = on
                 if on then
-                    b.Size = Vector2.new(40,60)
-                    b.Position = Vector2.new(pos.X-20,pos.Y-30)
+                    local dist = math.floor((hrp.Position - myHrp.Position).Magnitude)
+
+                    box.Visible = true
+                    box.Size = Vector2.new(40,60)
+                    box.Position = Vector2.new(pos.X-20,pos.Y-30)
+
+                    text.Visible = true
+                    text.Text = dist.."m"
+                    text.Position = Vector2.new(pos.X, pos.Y + 35)
+                else
+                    box.Visible = false
+                    text.Visible = false
                 end
+            else
+                box.Visible = false
+                text.Visible = false
             end
         else
-            b.Visible = false
+            box.Visible = false
+            text.Visible = false
         end
     end
 
+    -- AIM
     if AIM_ON then
         local t = GetTarget()
         if t and t.Character and t.Character:FindFirstChild("Head") then
@@ -330,3 +365,4 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
